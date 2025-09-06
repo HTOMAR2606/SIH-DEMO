@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Internship Allocation Engine</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/100px-Emblem_of_India.svg.png" alt="Government of India" class="gov-logo">
+                <div class="brand-text">
+                    <h3>PM Internship Allocation Engine</h3>
+                    <p>Government of India</p>
+                </div>
+            </div>
+            <div class="nav-links" id="navLinks">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="mainContent">
+        <!-- Login Page (Default) -->
+        <div id="loginPage" class="page active">
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/80px-Emblem_of_India.svg.png" alt="Government of India">
+                        <h2>PM Internship Allocation Portal</h2>
+                        <p>Smart AI-Powered Internship Matching System</p>
+                    </div>
+                    
+                    <div class="login-form-container">
+                        <div class="role-selector">
+                            <button class="role-btn active" data-role="candidate">
+                                <i class="fas fa-user-graduate"></i>
+                                Candidate Login
+                            </button>
+                            <button class="role-btn" data-role="admin">
+                                <i class="fas fa-user-shield"></i>
+                                Admin Login
+                            </button>
+                        </div>
+
+                        <form id="loginForm" class="login-form">
+                            <div class="form-group">
+                                <label for="candidateId">Candidate ID</label>
+                                <input type="text" id="candidateId" name="candidateId" placeholder="Enter your Candidate ID" required>
+                            </div>
+                            
+                            <div class="form-group" id="passwordGroup" style="display: none;">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" placeholder="Enter your password">
+                            </div>
+
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login
+                            </button>
+                        </form>
+
+                        <div class="login-footer">
+                            <p>For assistance, contact: <a href="mailto:support@pminternship.gov.in">support@pminternship.gov.in</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidate Dashboard -->
+        <div id="candidateDashboard" class="page">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h1>Candidate Dashboard</h1>
+                    <div class="user-info">
+                        <span id="welcomeMessage">Welcome, Candidate!</span>
+                        <button class="btn-secondary" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <h3><i class="fas fa-search"></i> Get Internship Recommendations</h3>
+                        <div class="recommendation-form">
+                            <div class="form-group">
+                                <label for="candidateIdInput">Your Candidate ID</label>
+                                <input type="text" id="candidateIdInput" placeholder="Enter Candidate ID">
+                            </div>
+                            <button class="btn-primary" onclick="getRecommendations()">
+                                <i class="fas fa-magic"></i> Get Recommendations
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations Table -->
+                    <div class="card" id="recommendationsCard" style="display: none;">
+                        <h3><i class="fas fa-list"></i> Recommended Internships</h3>
+                        <div class="table-container">
+                            <table id="recommendationsTable" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Company Name</th>
+                                        <th>Job Title</th>
+                                        <th>Match Score</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- My Applications -->
+                    <div class="card">
+                        <h3><i class="fas fa-file-alt"></i> My Applications</h3>
+                        <div class="applications-container" id="applicationsContainer">
+                            <p>No applications submitted yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Allotment Status -->
+                    <div class="card">
+                        <h3><i class="fas fa-check-circle"></i> Allotment Status</h3>
+                        <div class="allotment-container" id="allotmentContainer">
+                            <p>No allotment available yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="page">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h1>Admin Dashboard</h1>
+                    <div class="user-info">
+                        <span>Welcome, Administrator!</span>
+                        <button class="btn-secondary" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="overview">
+                        <i class="fas fa-chart-line"></i> Overview
+                    </button>
+                    <button class="tab-btn" data-tab="candidates">
+                        <i class="fas fa-users"></i> Candidates
+                    </button>
+                    <button class="tab-btn" data-tab="allocations">
+                        <i class="fas fa-tasks"></i> Allocations
+                    </button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-content active" id="overviewTab">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalInterns">0</h3>
+                                <p>Total Interns</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalProjects">0</h3>
+                                <p>Available Projects</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalMentors">0</h3>
+                                <p>Active Mentors</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalAllocations">0</h3>
+                                <p>Total Allocations</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3><i class="fas fa-robot"></i> AI Allocation Engine</h3>
+                        <p>Generate optimal intern-project allocations using advanced AI algorithms.</p>
+                        <button class="btn-primary btn-large" onclick="runAllocation()">
+                            <i class="fas fa-magic"></i> Run Smart Allocation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Candidates Tab -->
+                <div class="tab-content" id="candidatesTab">
+                    <div class="card">
+                        <h3><i class="fas fa-users"></i> All Candidates</h3>
+                        <div class="table-container">
+                            <table id="candidatesTable" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>College</th>
+                                        <th>Skills</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allocations Tab -->
+                <div class="tab-content" id="allocationsTab">
+                    <div class="card">
+                        <h3><i class="fas fa-tasks"></i> Current Allocations</h3>
+                        <div class="table-container">
+                            <table id="allocationsTable" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Intern</th>
+                                        <th>Project</th>
+                                        <th>Mentor</th>
+                                        <th>Match Score</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing your request...</p>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <span id="toastMessage"></span>
+            <button onclick="closeToast()">&times;</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/candidate.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

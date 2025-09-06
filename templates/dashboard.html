@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Smart Allocation Engine - AI Dashboard</title>
+    
+    <!-- CSS Libraries -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    
+    <!-- 3D Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .status-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 25px;
+            border: 2px solid #4CAF50;
+        }
+
+        .status-indicator.online {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .allocation-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #36D1DC, #5B86E5);
+        }
+
+        .btn.danger {
+            background: linear-gradient(45deg, #FF416C, #FF4B2B);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+        }
+
+        .metric-card:hover::before {
+            animation: shimmer 1.5s ease-in-out;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .visualization-container {
+            height: 400px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .three-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+        }
+
+        .chatbot-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 350px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .chatbot-container.open {
+            transform: translateY(0);
+        }
+
+        .chatbot-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-body {
+            height: 300px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+        }
+
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .realtime-updates {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .update-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .update-item:last-child {
+            border-bottom: none;
+        }
+
+        .update-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .insights-container {
+            grid-column: 1 / -1;
+        }
+
+        .insight-item {
+            background: linear-gradient(135deg, #36D1DC 0%, #5B86E5 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        .allocation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .allocation-table th,
+        .allocation-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .allocation-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .score-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .score-high { background: #4CAF50; }
+        .score-medium { background: #FF9800; }
+        .score-low { background: #F44336; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header animate__animated animate__fadeInDown">
+            <h1><i class="fas fa-brain"></i> PM Smart Allocation Engine</h1>
+            <p class="subtitle">AI-Powered Internship Matching for PM Yojana | Hackathon Demo</p>
+            
+            <div class="status-indicators">
+                <div class="status-indicator online">
+                    <i class="fas fa-circle" style="color: #4CAF50;"></i>
+                    <span>AI Engine Online</span>
+                </div>
+                <div class="status-indicator online">
+                    <i class="fas fa-chart-line" style="color: #2196F3;"></i>
+                    <span>Real-time Monitor Active</span>
+                </div>
+                <div class="status-indicator online">
+                    <i class="fas fa-robot" style="color: #9C27B0;"></i>
+                    <span>Insights Generator Ready</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="main-grid">
+            <!-- Allocation Controls -->
+            <div class="card animate__animated animate__fadeInLeft">
+                <h2><i class="fas fa-cogs"></i> Smart Allocation Controls</h2>
+                
+                <div class="allocation-controls">
+                    <button class="btn" onclick="generateAllocations()">
+                        <i class="fas fa-magic"></i> Generate AI Allocations
+                    </button>
+                    <button class="btn secondary" onclick="loadSampleData()">
+                        <i class="fas fa-database"></i> Load Sample Data
+                    </button>
+                    <button class="btn danger" onclick="resetSystem()">
+                        <i class="fas fa-refresh"></i> Reset System
+                    </button>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="total-interns">0</div>
+                        <div class="metric-label">Total Interns</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="total-projects">0</div>
+                        <div class="metric-label">Available Projects</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="total-mentors">0</div>
+                        <div class="metric-label">Active Mentors</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="match-score">0%</div>
+                        <div class="metric-label">Avg Match Score</div>
+                    </div>
+                </div>
+
+                <div id="allocation-results" style="display: none;">
+                    <h3>Latest Allocation Results</h3>
+                    <div id="results-summary"></div>
+                </div>
+            </div>
+
+            <!-- 3D Visualization (Wow Factor) -->
+            <div class="card animate__animated animate__fadeInRight">
+                <h2><i class="fas fa-cube"></i> 3D Allocation Visualization</h2>
+                <div class="visualization-container" id="three-visualization">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+                        <div>
+                            <i class="fas fa-cube" style="font-size: 3em; margin-bottom: 20px;"></i>
+                            <p>3D visualization will appear here after allocation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Dashboard -->
+        <div class="card animate__animated animate__fadeInUp insights-container">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('allocations')">
+                    <i class="fas fa-users"></i> Current Allocations
+                </button>
+                <button class="tab" onclick="switchTab('insights')">
+                    <i class="fas fa-lightbulb"></i> AI Insights
+                </button>
+                <button class="tab" onclick="switchTab('yojana')">
+                    <i class="fas fa-flag-india"></i> PM Yojana Compliance
+                </button>
+                <button class="tab" onclick="switchTab('realtime')">
+                    <i class="fas fa-broadcast-tower"></i> Real-time Monitor
+                </button>
+            </div>
+
+            <!-- Allocations Tab -->
+            <div class="tab-content active" id="allocations-tab">
+                <h2><i class="fas fa-users"></i> Current Allocations</h2>
+                <div id="allocations-container">
+                    <p>No allocations yet. Click "Generate AI Allocations" to start!</p>
+                </div>
+            </div>
+
+            <!-- AI Insights Tab -->
+            <div class="tab-content" id="insights-tab">
+                <h2><i class="fas fa-lightbulb"></i> AI-Generated Insights</h2>
+                <div id="insights-container">
+                    <p>Insights will appear after generating allocations.</p>
+                </div>
+            </div>
+
+            <!-- PM Yojana Tab -->
+            <div class="tab-content" id="yojana-tab">
+                <h2><i class="fas fa-flag-india"></i> PM Internship Yojana Compliance</h2>
+                <div id="yojana-container">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" id="yojana-verified">0</div>
+                            <div class="metric-label">Documents Verified</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="yojana-completed">0</div>
+                            <div class="metric-label">Completed Interns</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="yojana-compliance">0%</div>
+                            <div class="metric-label">Compliance Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Monitor Tab -->
+            <div class="tab-content" id="realtime-tab">
+                <h2><i class="fas fa-broadcast-tower"></i> Real-time Allocation Monitor</h2>
+                <div class="realtime-updates" id="realtime-updates">
+                    <p>Real-time monitoring will start after allocation generation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chatbot (Wow Factor) -->
+    <div class="chatbot-container" id="chatbot">
+        <div class="chatbot-header">
+            <div>
+                <i class="fas fa-robot"></i> AI Assistant
+            </div>
+            <button onclick="toggleChatbot()" style="background: none; border: none; color: white; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chatbot-body" id="chatbot-messages">
+            <div style="text-align: center; color: #666; padding: 20px;">
+                <i class="fas fa-robot" style="font-size: 2em; margin-bottom: 10px;"></i>
+                <p>Hi! I'm your AI assistant. Ask me about allocations, skill gaps, or optimization suggestions!</p>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatbot-input" placeholder="Ask me anything about allocations..." 
+                   onkeypress="handleChatKeypress(event)">
+            <button class="btn" onclick="sendChatMessage()" style="margin-left: 10px; padding: 12px;">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <button class="chatbot-toggle" onclick="toggleChatbot()">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <script>
+        // Global variables
+        let currentSessionId = null;
+        let realtimeInterval = null;
+        let scene, camera, renderer, allocationNodes = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            initializeThreeJS();
+        });
+
+        // API Functions
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/analytics/dashboard');
+                const data = await response.json();
+                
+                updateMetrics(data.summary);
+                updateRecentActivity(data.recent_activity);
+                loadYojanaCompliance();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        async function generateAllocations() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading"></div> Generating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/allocations/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentSessionId = data.batch_id;
+                    displayAllocationResults(data);
+                    displayInsights(data.insights);
+                    create3DVisualization(data.allocations);
+                    startRealtimeMonitoring(data.batch_id);
+                    
+                    showNotification('✅ AI Allocation Generated Successfully!', 'success');
+                } else {
+                    showNotification('❌ Error generating allocations', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('❌ Network error occurred', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function loadSampleData() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading"></div> Loading...';
+            btn.disabled = true;
+
+            try {
+                // This would typically load from a sample data endpoint
+                await generateSampleData();
+                await loadDashboardData();
+                showNotification('📊 Sample data loaded successfully!', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('❌ Error loading sample data', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Update UI Functions
+        function updateMetrics(summary) {
+            document.getElementById('total-interns').textContent = summary.total_interns || 0;
+            document.getElementById('total-projects').textContent = summary.total_projects || 0;
+            document.getElementById('total-mentors').textContent = summary.total_mentors || 0;
+            document.getElementById('match-score').textContent = Math.round(summary.average_rating || 0) + '%';
+        }
+
+        function displayAllocationResults(data) {
+            const container = document.getElementById('allocation-results');
+            const summary = document.getElementById('results-summary');
+            
+            summary.innerHTML = `
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">${data.summary.total_allocations}</div>
+                        <div class="metric-label">Allocations Created</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${Math.round(data.summary.average_score)}%</div>
+                        <div class="metric-label">Average Match Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${data.summary.processing_time.toFixed(2)}s</div>
+                        <div class="metric-label">Processing Time</div>
+                    </div>
+                </div>
+            `;
+            
+            container.style.display = 'block';
+            
+            // Update allocations table
+            updateAllocationsTable(data.allocations);
+        }
+
+        function updateAllocationsTable(allocations) {
+            const container = document.getElementById('allocations-container');
+            
+            if (allocations.length === 0) {
+                container.innerHTML = '<p>No allocations available.</p>';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="allocation-table">
+                    <thead>
+                        <tr>
+                            <th>Intern ID</th>
+                            <th>Project ID</th>
+                            <th>Mentor ID</th>
+                            <th>Match Score</th>
+                            <th>Skill Match</th>
+                            <th>Success Probability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            allocations.forEach(allocation => {
+                const scoreClass = allocation.final_score >= 80 ? 'score-high' : 
+                                 allocation.final_score >= 60 ? 'score-medium' : 'score-low';
+                
+                tableHTML += `
+                    <tr>
+                        <td>${allocation.intern_id}</td>
+                        <td>${allocation.project_id}</td>
+                        <td>${allocation.mentor_id}</td>
+                        <td><span class="score-badge ${scoreClass}">${Math.round(allocation.final_score)}%</span></td>
+                        <td><span class="score-badge ${scoreClass}">${Math.round(allocation.skill_match)}%</span></td>
+                        <td><span class="score-badge ${scoreClass}">${Math.round(allocation.success_probability)}%</span></td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+
+        function displayInsights(insights) {
+            const container = document.getElementById('insights-container');
+            
+            let insightsHTML = `
+                <div class="insight-item">
+                    <h3><i class="fas fa-chart-bar"></i> Performance Prediction</h3>
+                    <p>Predicted Success Rate: <strong>${insights.performance_prediction.predicted_success_rate}%</strong></p>
+                    <p>High Performers: <strong>${insights.performance_prediction.high_performers}</strong> interns</p>
+                    <p>At-Risk Interns: <strong>${insights.performance_prediction.at_risk_interns}</strong> interns</p>
+                </div>
+            `;
+
+            if (insights.recommendations.length > 0) {
+                insightsHTML += `
+                    <div class="insight-item">
+                        <h3><i class="fas fa-lightbulb"></i> AI Recommendations</h3>
+                `;
+                
+                insights.recommendations.forEach(rec => {
+                    insightsHTML += `<p><strong>${rec.type}:</strong> ${rec.message}</p>`;
+                });
+                
+                insightsHTML += '</div>';
+            }
+
+            if (insights.ai_recommendations.length > 0) {
+                insightsHTML += `
+                    <div class="insight-item">
+                        <h3><i class="fas fa-robot"></i> Process Optimization</h3>
+                `;
+                
+                insights.ai_recommendations.forEach(rec => {
+                    insightsHTML += `
+                        <p><strong>${rec.category}:</strong> ${rec.recommendation}</p>
+                        <small>Expected Impact: ${rec.expected_impact}</small><br><br>
+                    `;
+                });
+                
+                insightsHTML += '</div>';
+            }
+
+            container.innerHTML = insightsHTML;
+        }
+
+        // 3D Visualization (Major Wow Factor)
+        function initializeThreeJS() {
+            const container = document.getElementById('three-visualization');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setClearColor(0x000000, 0);
+            container.appendChild(renderer.domElement);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            camera.position.z = 5;
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate allocation nodes
+                allocationNodes.forEach(node => {
+                    node.rotation.y += 0.01;
+                });
+                
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function create3DVisualization(allocations) {
+            // Clear existing nodes
+            allocationNodes.forEach(node => scene.remove(node));
+            allocationNodes = [];
+            
+            if (!allocations || allocations.length === 0) return;
+            
+            const radius = 3;
+            allocations.forEach((allocation, index) => {
+                const angle = (index / allocations.length) * Math.PI * 2;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = (allocation.final_score - 50) / 50 * 2; // Height based on score
+                
+                // Create geometry and material based on match quality
+                const geometry = new THREE.SphereGeometry(0.2, 16, 16);
+                const color = allocation.final_score >= 80 ? 0x4CAF50 : 
+                             allocation.final_score >= 60 ? 0xFF9800 : 0xF44336;
+                
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: color,
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(x, y, z);
+                
+                // Add connection lines
+                const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(x, y, z)
+                ]);
+                const lineMaterial = new THREE.LineBasicMaterial({ color: color, opacity: 0.3, transparent: true });
+                const line = new THREE.Line(lineGeometry, lineMaterial);
+                
+                scene.add(sphere);
+                scene.add(line);
+                allocationNodes.push(sphere, line);
+            });
+        }
+
+        // Real-time Monitoring (Wow Factor)
+        function startRealtimeMonitoring(sessionId) {
+            if (realtimeInterval) {
+                clearInterval(realtimeInterval);
+            }
+            
+            realtimeInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/realtime/monitor/${sessionId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        addRealtimeUpdate(data.update);
+                    }
+                } catch (error) {
+                    console.error('Real-time monitoring error:', error);
+                }
+            }, 3000); // Update every 3 seconds
+        }
+
+        function addRealtimeUpdate(update) {
+            const container = document.getElementById('realtime-updates');
+            
+            const updateElement = document.createElement('div');
+            updateElement.className = 'update-item animate__animated animate__fadeInUp';
+            updateElement.innerHTML = `
+                <div class="update-icon">
+                    <i class="fas fa-${getUpdateIcon(update.type)}"></i>
+                </div>
+                <div>
+                    <strong>${update.message}</strong><br>
+                    <small>${new Date(update.timestamp).toLocaleTimeString()}</small>
+                </div>
+            `;
+            
+            container.appendChild(updateElement);
+            
+            // Keep only last 5 updates
+            while (container.children.length > 5) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        function getUpdateIcon(type) {
+            const icons = {
+                'intern_joined': 'user-plus',
+                'mentor_unavailable': 'user-times',
+                'project_updated': 'edit',
+                'skill_assessment': 'chart-bar',
+                'feedback_received': 'thumbs-up'
+            };
+            return icons[type] || 'info';
+        }
+
+        // AI Chatbot Functions (Wow Factor)
+        function toggleChatbot() {
+            const chatbot = document.getElementById('chatbot');
+            chatbot.classList.toggle('open');
+        }
+
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatbot-input');
+            const query = input.value.trim();
+            
+            if (!query) return;
+            
+            // Add user message
+            addChatMessage(query, 'user');
+            input.value = '';
+            
+            // Add thinking indicator
+            addChatMessage('🤖 Analyzing your query...', 'bot', true);
+            
+            try {
+                const response = await fetch('/api/ai/chatbot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                const data = await response.json();
+                
+                // Remove thinking indicator
+                const messages = document.getElementById('chatbot-messages');
+                messages.removeChild(messages.lastChild);
+                
+                // Add AI response
+                addChatMessage(data.response.response, 'bot');
+                
+                // Add suggestions if available
+                if (data.response.suggestions && data.response.suggestions.length > 0) {
+                    const suggestions = data.response.suggestions.join(', ');
+                    addChatMessage(`💡 Suggestions: ${suggestions}`, 'bot suggestion');
+                }
+                
+            } catch (error) {
+                console.error('Chatbot error:', error);
+                addChatMessage('Sorry, I encountered an error. Please try again.', 'bot error');
+            }
+        }
+
+        function addChatMessage(message, type, isTemporary = false) {
+            const container = document.getElementById('chatbot-messages');
+            const messageElement = document.createElement('div');
+            
+            const alignClass = type === 'user' ? 'text-right' : 'text-left';
+            const bgClass = type === 'user' ? 'bg-primary' : 
+                           type.includes('suggestion') ? 'bg-success' : 
+                           type.includes('error') ? 'bg-danger' : 'bg-secondary';
+            
+            messageElement.innerHTML = `
+                <div style="margin-bottom: 10px; ${type === 'user' ? 'text-align: right;' : ''}">
+                    <div style="display: inline-block; padding: 10px 15px; border-radius: 15px; 
+                                background: ${type === 'user' ? '#667eea' : '#f8f9fa'}; 
+                                color: ${type === 'user' ? 'white' : '#333'}; max-width: 80%;">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(messageElement);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Load specific tab data
+            if (tabName === 'yojana') {
+                loadYojanaCompliance();
+            }
+        }
+
+        async function loadYojanaCompliance() {
+            try {
+                const response = await fetch('/api/yojana/batch-report');
+                const data = await response.json();
+                
+                document.getElementById('yojana-verified').textContent = data.batch_summary.documents_verified;
+                document.getElementById('yojana-completed').textContent = data.batch_summary.completed_interns;
+                document.getElementById('yojana-compliance').textContent = Math.round(data.batch_summary.completion_rate) + '%';
+            } catch (error) {
+                console.error('Error loading Yojana compliance:', error);
+            }
+        }
+
+            // Sample data generation for demo
+        async function generateSampleData() {
+            // Generate a timestamp to ensure unique emails
+            const timestamp = new Date().getTime();
+            
+            // Generate sample interns
+            const sampleInterns = [
+                {
+                    name: "Aarav Sharma",
+                    email: `aarav.sharma.${timestamp}@example.com`,
+                    college: "IIT Delhi",
+                    branch: "Computer Science",
+                    year: 3,
+                    cgpa: 8.5,
+                    skills: {"Python": 8, "Data Analysis": 7, "Product Strategy": 6},
+                    interests: ["AI", "Product Management", "Data Science"],
+                    preferences: {"project_type": "Development", "mentoring_style": "Collaborative"},
+                    category: "General",
+                    state: "Delhi",
+                    application_id: `PM2025001-${timestamp}`
+                },
+                {
+                    name: "Priya Patel",
+                    email: `priya.patel.${timestamp}@example.com`,
+                    college: "BITS Pilani",
+                    branch: "Electronics",
+                    year: 4,
+                    cgpa: 9.1,
+                    skills: {"Market Research": 9, "Excel": 8, "Presentation": 8},
+                    interests: ["Market Analysis", "User Research"],
+                    preferences: {"project_type": "Research", "mentoring_style": "Guidance"},
+                    category: "General",
+                    state: "Rajasthan",
+                    application_id: `PM2025002-${timestamp}`
+                },
+                {
+                    name: "Arjun Singh",
+                    email: `arjun.singh.${timestamp}@example.com`,
+                    college: "NIT Trichy",
+                    branch: "Mechanical",
+                    year: 3,
+                    cgpa: 7.8,
+                    skills: {"Project Management": 7, "Agile": 6, "Communication": 8},
+                    interests: ["Product Strategy", "Team Management"],
+                    preferences: {"project_type": "Management", "mentoring_style": "Hands-on"},
+                    category: "OBC",
+                    state: "Tamil Nadu",
+                    application_id: `PM2025003-${timestamp}`
+                }
+            ];
+
+            // Generate sample projects
+            const sampleProjects = [
+                {
+                    title: "AI-Powered Customer Insights Platform",
+                    description: "Develop insights platform for customer behavior analysis",
+                    department: "Product",
+                    organization: "TechCorp India",
+                    required_skills: {"Python": 7, "Data Analysis": 8, "AI": 6},
+                    difficulty_level: 4,
+                    duration_weeks: 12,
+                    project_type: "Development",
+                    yojana_approved: true,
+                    stipend_amount: 25000,
+                    tech_stack: ["Python", "TensorFlow", "React"]
+                },
+                {
+                    title: "Market Research for Digital India Initiative",
+                    description: "Comprehensive market research for government digital initiatives",
+                    department: "Strategy",
+                    organization: "GovTech Solutions",
+                    required_skills: {"Market Research": 8, "Excel": 7, "Presentation": 8},
+                    difficulty_level: 3,
+                    duration_weeks: 10,
+                    project_type: "Research",
+                    yojana_approved: true,
+                    stipend_amount: 20000,
+                    tech_stack: ["Excel", "PowerBI", "Tableau"]
+                }
+            ];
+
+            // Generate sample mentors
+            const sampleMentors = [
+                {
+                    name: "Dr. Rajesh Kumar",
+                    email: `rajesh.kumar.${timestamp}@techcorp.com`,
+                    designation: "Senior Product Manager",
+                    organization: "TechCorp India",
+                    experience_years: 8,
+                    expertise_areas: ["Product Strategy", "AI/ML", "Team Leadership"],
+                    mentoring_style: "Collaborative",
+                    max_interns: 2,
+                    rating: 4.8
+                },
+                {
+                    name: "Ms. Sneha Reddy",
+                    email: `sneha.reddy.${timestamp}@govtech.com`,
+                    designation: "Research Director",
+                    organization: "GovTech Solutions",
+                    experience_years: 6,
+                    expertise_areas: ["Market Research", "Policy Analysis", "Data Visualization"],
+                    mentoring_style: "Guidance",
+                    max_interns: 3,
+                    rating: 4.9
+                }
+            ];
+
+            // Send data to backend
+            for (const intern of sampleInterns) {
+                await fetch('/api/interns', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(intern)
+                });
+            }
+
+            for (const project of sampleProjects) {
+                await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(project)
+                });
+            }
+
+            for (const mentor of sampleMentors) {
+                await fetch('/api/mentors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mentor)
+                });
+            }
+        }
+
+        // Utility functions
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#4CAF50' : '#F44336'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 4000);
+        }
+
+        async function resetSystem() {
+            if (confirm('Are you sure you want to reset the system? This will clear all data.')) {
+                // In a real implementation, this would call a reset API
+                location.reload();
+            }
+        }
+
+        // Handle window resize for 3D visualization
+        window.addEventListener('resize', () => {
+            if (camera && renderer) {
+                const container = document.getElementById('three-visualization');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
+    </script>
+</body>
+</html>
